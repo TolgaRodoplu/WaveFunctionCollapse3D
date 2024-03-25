@@ -1,18 +1,29 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
+using Unity.VisualScripting;
 using UnityEngine;
 
-public class Cell : MonoBehaviour
+public class Cell 
 {
-    // Start is called before the first frame update
-    void Start()
+    public Vector3Int index;
+    public int ID = -10;
+    public List<int> possibleModules;
+        
+    public Cell(Vector3Int v)
     {
+        index = v;
+
+        possibleModules = new List<int>();
         
     }
 
-    // Update is called once per frame
-    void Update()
-    {
-        
-    }
+    //bool ModifyPossibilities(List<int> possibilities)
+    //{
+    //    List<int> result = new List<int>();
+
+
+    //} 
+
 }
+

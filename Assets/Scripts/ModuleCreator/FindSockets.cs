@@ -1,39 +1,51 @@
-using System;
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.UI;
 using TMPro;
+using UnityEditor;
 
 public class FindSockets : MonoBehaviour
 {
     int verticalSocketNumberCount = 0;
     int socketNumberCount = 0;
     float socketDistance = 0.99f;
-    public List<MeshFilter> meshes = new List<MeshFilter>();
+    public string fbxName = null;
+    //public Transform meshesParent;
     Dictionary<string, List<Vector2>> socketList;
     Dictionary<string, List<Vector2>> socketListVertical;
     int prototypeCount = 0;
     List<Prototype> prototypes = new List<Prototype>();
-    //public GameObject framePrefab;
 
 
     private void Start()
     {
         ModuleList moduleList = new ModuleList();
 
+        Mesh[] meshes = Resources.LoadAll<Mesh>(fbxName); 
 
         socketList = new Dictionary<string, List<Vector2>>();
         socketListVertical = new Dictionary<string, List<Vector2>>();
 
-       
-
-        foreach (var mesh in meshes)
+        foreach (Mesh m in meshes) 
         {
-            var sockets = LabelSocket(mesh.mesh.vertices);
 
-            CreatePrototypes(sockets, mesh.gameObject.name);
+            var sockets = LabelSocket(m.vertices);
+
+            CreatePrototypes(sockets, m.name);
+
         }
+
+        //for (int i = 0; i < meshesParent.childCount; i++)
+        //{
+
+        //    var child = meshesParent.GetChild(i);
+
+        //    var sockets = LabelSocket(child.GetComponent<MeshFilter>().mesh.vertices);
+
+        //    CreatePrototypes(sockets, child.name);
+
+        //}
+
+        
 
        
 
@@ -69,40 +81,43 @@ public class FindSockets : MonoBehaviour
             moduleList.modules.Add(m);
         }
 
-        int cnt = 0;
+        //int cnt = 0;
 
-        for (int i = 0; i < prototypeCount / 4; i++)
-        {
-            for (int j = 0; j < 4; j++)
-            {
-                RenderPrototypes(prototypes[cnt], j, i);
-                cnt++;
-            }
-        }
+        //for (int i = 0; i < prototypeCount / 4; i++)
+        //{
+        //    for (int j = 0; j < 4; j++)
+        //    {
+        //        RenderPrototypes(prototypes[cnt], j, i);
+        //        cnt++;
+        //    }
+        //}
 
         //savePrototypesToJson
 
+        moduleList.fbxName = fbxName;
+
         SaveData.SaveToJson(moduleList);
-    }
-
-    void RenderPrototypes(Prototype p, int x, int z)
-    {
-        GameObject obj = Instantiate((GameObject)Resources.Load("Prototype", typeof(GameObject)));
-        GameObject obj2 = Instantiate((GameObject)Resources.Load("Objects1/" + p.meshName, typeof(GameObject)), obj.transform);
-
-        foreach (KeyValuePair<string, string> pair in p.sockets) 
-        {
-
-            obj.transform.GetChild(0).Find(pair.Key).GetComponent<TextMeshProUGUI>().text = pair.Value;
-
-        }
-
-        obj2.transform.localRotation = Quaternion.Euler(new Vector3(0f, p.rotIndex * 90f, 0f));
-        obj2.transform.localPosition = Vector3.zero;
-
-        obj.transform.position = new Vector3(x * 4, 0f, z * 4);
 
     }
+
+    //void RenderPrototypes(Prototype p, int x, int z)
+    //{
+    //    GameObject obj = Instantiate((GameObject)Resources.Load("Prototype", typeof(GameObject)));
+    //    GameObject obj2 = Instantiate((GameObject)Resources.Load("Objects/" + p.meshName, typeof(GameObject)), obj.transform);
+
+    //    foreach (KeyValuePair<string, string> pair in p.sockets) 
+    //    {
+
+    //        obj.transform.GetChild(0).Find(pair.Key).GetComponent<TextMeshProUGUI>().text = pair.Value;
+
+    //    }
+
+    //    obj2.transform.localRotation = Quaternion.Euler(new Vector3(0f, p.rotIndex * 90f, 0f));
+    //    obj2.transform.localPosition = Vector3.zero;
+
+    //    obj.transform.position = new Vector3(x * 4, 0f, z * 4);
+
+    //}
 
     bool isValidNeighbor(string objectSocket, string potentialNeighbor)
     {

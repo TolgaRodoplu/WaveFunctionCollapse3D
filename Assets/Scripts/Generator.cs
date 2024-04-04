@@ -4,46 +4,48 @@ using System.Linq;
 using Unity.VisualScripting;
 using UnityEngine;
 
-
-
 public class Generator : MonoBehaviour
 {
     ModuleList moduleList;
-    int dimX = 20;
-    int dimY = 4;
-    int dimZ = 20;
+    public int dimX = 20;
+    public int dimY = 5;
+    public int dimZ = 20;
+    int edgeModuleChoice = 28;
     Cell[,,] map;
+    Mesh[] meshes;
 
     private void Start()
     {
         moduleList = SaveData.LoadFromJson();
-        InitilizeMap();
-
+        meshes = Resources.LoadAll<Mesh>(moduleList.fbxName);
         
-        foreach(Cell cell in map)
+        InitilizeMap();
+        InitilizeEdges();
+        WaveFunction();
+
+    }
+
+    void InitilizeEdges()
+    {
+        foreach (Cell cell in map)
         {
-            if( cell.index.y == dimY - 1)
-                Collapse(cell.index, 0);
 
-
-            else if (cell.index.x == 0 || cell.index.x == dimX - 1 || cell.index.z == 0 || cell.index.z == dimZ - 1)
+            if (cell.index.x == 0 || cell.index.x == dimX - 1 || cell.index.z == 0 || cell.index.z == dimZ - 1)
             {
-                if ((cell.index.y == 0))
+                if ((cell.index.y == 2))
                 {
-                    Collapse(cell.index, 38);
+                    Collapse(cell.index, edgeModuleChoice);
                 }
-                else
-                    Collapse(cell.index, 0);
             }
 
             ModifyNeighbors(cell.index);
         }
+    }
 
-
+    void WaveFunction()
+    {
         while (!isCollapsedComplate())
             Iterate();
-
-
 
         Debug.Log("AllCellsCollapsed!!!!!!");
     }
@@ -93,13 +95,10 @@ public class Generator : MonoBehaviour
 
         Stack<Vector3Int> toBeModified = new Stack<Vector3Int>();
         toBeModified.Push(collapsedCell);
-        Debug.Log("toBeModified Count = " + toBeModified.Count);
 
         while (toBeModified.Count > 0) 
         {
-            Debug.Log("Popped from stack");
             Vector3Int currentCellCoord = toBeModified.Pop();
-            Debug.Log("toBeModified Count = " + toBeModified.Count);
 
             foreach (Vector3Int d in GetValidDirections(currentCellCoord))
             {
@@ -120,9 +119,7 @@ public class Generator : MonoBehaviour
 
                         if(!toBeModified.Contains(otherCellCoord))
                         {
-                            Debug.Log("Pushed into stack");
                             toBeModified.Push(otherCellCoord);
-                            Debug.Log("toBeModified Count = " + toBeModified.Count);
                         }
                     }
                 }
@@ -270,6 +267,8 @@ public class Generator : MonoBehaviour
 
     void InitilizeMap()
     {
+        moduleList = SaveData.LoadFromJson();
+
         map = new Cell[dimX, dimY, dimZ];
 
         for (int i = 0; i < dimX; i++)
@@ -288,12 +287,25 @@ public class Generator : MonoBehaviour
                 }
             }
         }
+
+        
     }
 
     private void RenderCell(Cell c)
     {
-        
-        GameObject obj = Instantiate((GameObject)Resources.Load("Objects1/" + moduleList.modules[c.ID].referanceMesh, typeof(GameObject)));
+        GameObject obj = Instantiate((GameObject)Resources.Load("Cell", typeof(GameObject)));
+
+        Mesh m = null;
+
+        foreach(Mesh mesh in meshes)
+        {
+            if(mesh.name == moduleList.modules[c.ID].referanceMesh) 
+            {
+                m = mesh;
+            }
+        }
+
+        obj.GetComponent<MeshFilter>().mesh = m;
 
         Vector3 rot = new Vector3(0, 90 * moduleList.modules[c.ID].rotIndex, 0);
 

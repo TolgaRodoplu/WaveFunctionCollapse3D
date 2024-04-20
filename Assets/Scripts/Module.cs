@@ -10,7 +10,7 @@ public class Module
     public int ID;
     public int rotIndex;
     public string referanceMesh;
-    public int weight;
+    public int weight = 1;
     public Dictionary<string, List<int>> validNeighbors = new Dictionary<string, List<int>>()
     {
         {"PosX", new List<int>()},

@@ -262,7 +262,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   dimX: 20
-  dimY: 4
+  dimY: 5
   dimZ: 20
 --- !u!1 &1323530345
 GameObject:

@@ -2,22 +2,25 @@ using System.Collections.Generic;
 using UnityEngine;
 using TMPro;
 using UnityEditor;
+using System;
 
 public class FindSockets : MonoBehaviour
 {
     int verticalSocketNumberCount = 0;
     int socketNumberCount = 0;
-    float socketDistance = 0.99f;
+    float socketDistance = 0.999f;
     public string fbxName = null;
-    //public Transform meshesParent;
     Dictionary<string, List<Vector2>> socketList;
     Dictionary<string, List<Vector2>> socketListVertical;
     int prototypeCount = 0;
     List<Prototype> prototypes = new List<Prototype>();
-
+    PrototypePreferences[] preferances;
 
     private void Start()
     {
+        
+        preferances = (PrototypePreferences[])FindObjectsOfType(typeof(PrototypePreferences));
+
         ModuleList moduleList = new ModuleList();
 
         Mesh[] meshes = Resources.LoadAll<Mesh>(fbxName); 
@@ -57,6 +60,7 @@ public class FindSockets : MonoBehaviour
             m.ID = p.ID;
             m.rotIndex = p.rotIndex;
             m.referanceMesh = p.meshName;
+            m.weight = p.weight;
             foreach (Prototype p1 in prototypes)
             {
                 if (isValidNeighbor(p.sockets["PosX"], p1.sockets["NegX"]))
@@ -78,6 +82,7 @@ public class FindSockets : MonoBehaviour
                     m.validNeighbors["NegZ"].Add(p1.ID);
             }
 
+
             moduleList.modules.Add(m);
         }
 
@@ -93,9 +98,7 @@ public class FindSockets : MonoBehaviour
         //}
 
         //savePrototypesToJson
-
         moduleList.fbxName = fbxName;
-
         SaveData.SaveToJson(moduleList);
 
     }
@@ -232,9 +235,19 @@ public class FindSockets : MonoBehaviour
         return sockets;
     }
 
+
     void CreatePrototypes(Dictionary<string, string> sockets, string meshName)
     {
-       
+        int weight = 1;
+
+        foreach (PrototypePreferences p in preferances)
+        {
+            if (p.meshName == meshName)
+                weight = p.weight;
+        }
+
+        if (weight <= 0)
+            weight = 1;
 
         Prototype[] newPrototypes = new Prototype[4];
 
@@ -249,6 +262,8 @@ public class FindSockets : MonoBehaviour
         newPrototypes[0].rotIndex = 0;
 
         newPrototypes[0].sockets = sockets;
+
+        newPrototypes[0].weight = weight;
 
         if (sockets["PosY"] != "-1")
             newPrototypes[0].sockets["PosY"] = sockets["PosY"] + "0";
@@ -269,6 +284,8 @@ public class FindSockets : MonoBehaviour
             newPrototypes[i].meshName = meshName;
 
             newPrototypes[i].rotIndex = i;
+
+            newPrototypes[i].weight = weight;
 
             newPrototypes[i].sockets["PosX"] = newPrototypes[i - 1].sockets["PosZ"];
 
@@ -481,6 +498,7 @@ public class Prototype
     public int ID;
     public string meshName;
     public int rotIndex;
+    public int weight = 1;
 
     public Dictionary<string, string> sockets = new Dictionary<string, string>()
     {

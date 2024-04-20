@@ -1,18 +1,19 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Xml.Linq;
 using Unity.VisualScripting;
 using UnityEngine;
+using UnityEngine.XR;
 
 public class Generator : MonoBehaviour
 {
     ModuleList moduleList;
-    public int dimX = 20;
-    public int dimY = 5;
-    public int dimZ = 20;
-    int edgeModuleChoice = 28;
+    public int dimX = 100;
+    public int dimY = 10;
+    public int dimZ = 100;
     Cell[,,] map;
-    Mesh[] meshes;
+    Mesh[] meshes;  
 
     private void Start()
     {
@@ -25,16 +26,40 @@ public class Generator : MonoBehaviour
 
     }
 
+    int SelectRandom(List<int> possibleModules)
+    {
+        List<int> weights = new List<int>();
+
+        foreach (int p in possibleModules)
+        {
+            weights.Add(moduleList.modules[p].weight);
+        }
+
+        var weightedElements = possibleModules.Zip(weights, (module, weight) => new { Module = module, Weight = weight }).ToList();
+
+        int totalWeight = weightedElements.Sum(w => w.Weight);
+
+        int randomNumber = Random.Range(0, totalWeight);
+
+        int selectedModule = weightedElements.First(item =>
+        {
+            randomNumber -= item.Weight;
+            return randomNumber < 0;
+        }).Module;
+
+        return selectedModule;
+    }
     void InitilizeEdges()
     {
         foreach (Cell cell in map)
         {
+            
 
             if (cell.index.x == 0 || cell.index.x == dimX - 1 || cell.index.z == 0 || cell.index.z == dimZ - 1)
             {
-                if ((cell.index.y == 2))
+                if ((cell.index.y == 0))
                 {
-                    Collapse(cell.index, edgeModuleChoice);
+                    Collapse(cell.index, 59);
                 }
             }
 
@@ -61,9 +86,9 @@ public class Generator : MonoBehaviour
     {
         Cell c = GetCell(collapsedCell);
 
-        int rand = Random.Range(0, c.possibleModules.Count);
+        int x = Random.Range(0, c.possibleModules.Count);
 
-        int x = c.possibleModules[rand];
+        x = c.possibleModules[x];
 
         c.ID = x;
 
@@ -144,7 +169,7 @@ public class Generator : MonoBehaviour
         Cell cell = GetCell(cellCoords);
         
 
-        cell.possibleModules.Remove(p);
+        cell.possibleModules.RemoveAll(r => r == p);
     }
     
     string GetDirString(Vector3Int dir)
@@ -280,9 +305,9 @@ public class Generator : MonoBehaviour
                     Vector3Int v = new Vector3Int(i, j, k);
                     map[i, j, k] = new Cell(v);
 
-                    for (int l = 0; l < moduleList.modules.Count; l++)
+                    foreach (Module l in moduleList.modules)
                     {
-                        map[i, j, k].possibleModules.Add(l);
+                        map[i, j, k].possibleModules.Add(l.ID);
                     }
                 }
             }

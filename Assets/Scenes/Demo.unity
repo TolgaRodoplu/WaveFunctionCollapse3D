@@ -264,6 +264,9 @@ MonoBehaviour:
   dimX: 20
   dimY: 5
   dimZ: 20
+  renderInterval: 0.01
+  emptyMesh: Mesh0
+  undergroundMesh: Mesh11
 --- !u!1 &1323530345
 GameObject:
   m_ObjectHideFlags: 0

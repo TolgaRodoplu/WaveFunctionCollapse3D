@@ -11,7 +11,7 @@ public class CameraRotate : MonoBehaviour
     void Start()
     {
         var gen = FindObjectOfType<Generator>();
-        pointToLook = new Vector3(gen.dimX, gen.dimY, gen.dimZ);
+        pointToLook = new Vector3(gen.dimX, gen.dimY-10, gen.dimZ);
 
 
         

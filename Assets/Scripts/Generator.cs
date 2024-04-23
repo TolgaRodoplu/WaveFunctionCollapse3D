@@ -14,41 +14,24 @@ public class Generator : MonoBehaviour
     public int dimZ = 100;
     Cell[,,] map;
     Mesh[] meshes;  
+    Queue<Cell> cellsOrder = new Queue<Cell>();
+    public float renderInterval = 0.1f;
+    public string emptyMesh = null;
+    public string undergroundMesh = null;
 
     private void Start()
     {
         moduleList = SaveData.LoadFromJson();
         meshes = Resources.LoadAll<Mesh>(moduleList.fbxName);
         
+
         InitilizeMap();
         InitilizeEdges();
         WaveFunction();
-
+        StartCoroutine(RenderInTime());
     }
 
-    int SelectRandom(List<int> possibleModules)
-    {
-        List<int> weights = new List<int>();
-
-        foreach (int p in possibleModules)
-        {
-            weights.Add(moduleList.modules[p].weight);
-        }
-
-        var weightedElements = possibleModules.Zip(weights, (module, weight) => new { Module = module, Weight = weight }).ToList();
-
-        int totalWeight = weightedElements.Sum(w => w.Weight);
-
-        int randomNumber = Random.Range(0, totalWeight);
-
-        int selectedModule = weightedElements.First(item =>
-        {
-            randomNumber -= item.Weight;
-            return randomNumber < 0;
-        }).Module;
-
-        return selectedModule;
-    }
+    
     void InitilizeEdges()
     {
         foreach (Cell cell in map)
@@ -59,12 +42,33 @@ public class Generator : MonoBehaviour
             {
                 if ((cell.index.y == 0))
                 {
-                    Collapse(cell.index, 59);
+                    Collapse(cell.index, 28);
                 }
             }
 
             ModifyNeighbors(cell.index);
         }
+    }
+
+    int SelectRandom(List<int> possibleModules)
+    {
+
+        List<int> selectionList = new List<int>();
+
+        foreach (int i in possibleModules)
+        {
+            int weight = moduleList.modules[i].weight;
+
+            for(int j = 0; j < weight; j++)
+                selectionList.Add(i);
+        }
+
+        int rand = Random.Range(0, selectionList.Count);
+
+        int x = selectionList[rand];
+
+        return x;
+
     }
 
     void WaveFunction()
@@ -86,17 +90,25 @@ public class Generator : MonoBehaviour
     {
         Cell c = GetCell(collapsedCell);
 
-        int x = Random.Range(0, c.possibleModules.Count);
+        int x = SelectRandom(c.possibleModules);
 
-        x = c.possibleModules[x];
+
 
         c.ID = x;
 
         c.possibleModules.Clear();
         c.possibleModules.Add(x);
 
-        RenderCell(c);
+        AddToRenderQueue(c);
 
+        //RenderCell(c);
+
+    }
+
+    void AddToRenderQueue(Cell c)
+    {
+        if (!moduleList.modules[c.ID].referanceMesh.Equals(emptyMesh) && !moduleList.modules[c.ID].referanceMesh.Equals(undergroundMesh))
+            cellsOrder.Enqueue(c);
     }
 
     void Collapse(Vector3Int collapsedCell, int choice)
@@ -111,7 +123,10 @@ public class Generator : MonoBehaviour
             c.possibleModules = new List<int>();
             c.possibleModules.Add(choice);
             ModifyNeighbors(collapsedCell);
-            RenderCell(c);
+
+            AddToRenderQueue(c);
+
+            //RenderCell(c);
         }
     }
 
@@ -314,6 +329,18 @@ public class Generator : MonoBehaviour
         }
 
         
+    }
+
+    IEnumerator RenderInTime()
+    {
+        while (cellsOrder.Count > 0) 
+        {
+            
+            
+            RenderCell(cellsOrder.Dequeue());
+
+            yield return new WaitForSeconds(renderInterval);
+        }
     }
 
     private void RenderCell(Cell c)

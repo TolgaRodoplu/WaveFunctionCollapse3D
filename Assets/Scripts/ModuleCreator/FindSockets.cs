@@ -18,8 +18,10 @@ public class FindSockets : MonoBehaviour
 
     private void Start()
     {
-        
+
         preferances = (PrototypePreferences[])FindObjectsOfType(typeof(PrototypePreferences));
+
+        Debug.Log(preferances.Length);
 
         ModuleList moduleList = new ModuleList();
 

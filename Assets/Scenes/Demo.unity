@@ -227,6 +227,7 @@ GameObject:
   m_Component:
   - component: {fileID: 622280618}
   - component: {fileID: 622280619}
+  - component: {fileID: 622280620}
   m_Layer: 0
   m_Name: Generator
   m_TagString: Untagged
@@ -267,6 +268,19 @@ MonoBehaviour:
   renderInterval: 0.01
   emptyMesh: Mesh0
   undergroundMesh: Mesh11
+  initilizeChoice: 31
+--- !u!114 &622280620
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 622280617}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0e3fc34326807984297c0d963c848dfa, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &1323530345
 GameObject:
   m_ObjectHideFlags: 0

@@ -13,17 +13,18 @@ public class Generator : MonoBehaviour
     public int dimY = 10;
     public int dimZ = 100;
     Cell[,,] map;
-    Mesh[] meshes;  
+    Dictionary<string, Mesh[]> meshes; 
     Queue<Cell> cellsOrder = new Queue<Cell>();
     public float renderInterval = 0.1f;
     public string emptyMesh = null;
     public string undergroundMesh = null;
+    public int initilizeChoice = 51;
+    string meshPathName = "Objects/";
 
     private void Start()
     {
         moduleList = SaveData.LoadFromJson();
-        meshes = Resources.LoadAll<Mesh>(moduleList.fbxName);
-        
+        meshes = new Dictionary<string, Mesh[]>();  
 
         InitilizeMap();
         InitilizeEdges();
@@ -31,7 +32,9 @@ public class Generator : MonoBehaviour
         StartCoroutine(RenderInTime());
     }
 
-    
+   
+
+    //Initilize maps edges to specified tile.
     void InitilizeEdges()
     {
         foreach (Cell cell in map)
@@ -42,13 +45,15 @@ public class Generator : MonoBehaviour
             {
                 if ((cell.index.y == 0))
                 {
-                    Collapse(cell.index, 28);
+                    Collapse(cell.index, initilizeChoice);
                 }
             }
 
             ModifyNeighbors(cell.index);
         }
     }
+
+    //Selects a id from a given list based on their weights
 
     int SelectRandom(List<int> possibleModules)
     {
@@ -71,6 +76,8 @@ public class Generator : MonoBehaviour
 
     }
 
+    //Main Algorithm Loop
+
     void WaveFunction()
     {
         while (!isCollapsedComplate())
@@ -79,6 +86,8 @@ public class Generator : MonoBehaviour
         Debug.Log("AllCellsCollapsed!!!!!!");
     }
 
+    //Algorithm iteration
+
     void Iterate()
     {
         Vector3Int lowestEnt = FindLowestEntropyIndex();
@@ -86,6 +95,7 @@ public class Generator : MonoBehaviour
         ModifyNeighbors(lowestEnt);
     }
 
+    //Collapses the given cell randomly
     void Collapse(Vector3Int collapsedCell)
     {
         Cell c = GetCell(collapsedCell);
@@ -105,12 +115,14 @@ public class Generator : MonoBehaviour
 
     }
 
+    //Adds cells to a queue to be rendered for demonstration
     void AddToRenderQueue(Cell c)
     {
         if (!moduleList.modules[c.ID].referanceMesh.Equals(emptyMesh) && !moduleList.modules[c.ID].referanceMesh.Equals(undergroundMesh))
             cellsOrder.Enqueue(c);
     }
 
+    //Collapses cell to a determined state
     void Collapse(Vector3Int collapsedCell, int choice)
     {
         Cell c = GetCell(collapsedCell);
@@ -130,6 +142,8 @@ public class Generator : MonoBehaviour
         }
     }
 
+
+    //Take Collapsed cell and iterate over its neighbors and their neighbors and so on, to distribute the neccecary changes on their possibility lists
     void ModifyNeighbors(Vector3Int collapsedCell)
     {
 
@@ -173,20 +187,24 @@ public class Generator : MonoBehaviour
 
     }
 
+    //Returns a copy of a cells possibility list
     List<int> GetPossibilitiesCopy(Vector3Int cellCoord)
     {
         List<int> result = new List<int>(GetCell(cellCoord).possibleModules);
         return result;
     }
 
+
+    //Make changes on the cell to remove unwanted ids
     void Constrain(Vector3Int cellCoords, int p)
     {
         Cell cell = GetCell(cellCoords);
-        
 
         cell.possibleModules.RemoveAll(r => r == p);
     }
     
+    
+    //Returns a string based on a given vector
     string GetDirString(Vector3Int dir)
     {
 
@@ -206,6 +224,8 @@ public class Generator : MonoBehaviour
         return null;
     }
 
+
+    //Returns a new list consisting of intersection of the possibilities of all the possible mopdules neighbors in specified direction
     List<int> GetPossibleNeighborsInDir(List<int> possibleModules, Vector3Int dir) 
     {
         List<int> result = new List<int>();
@@ -226,6 +246,7 @@ public class Generator : MonoBehaviour
         return result;  
     }
 
+    //Returns a list of valid directions
     List<Vector3Int> GetValidDirections(Vector3Int currentCell)
     {
         
@@ -261,11 +282,14 @@ public class Generator : MonoBehaviour
         return result;
     }
 
+    //Returns the cell in a given coordinate
     Cell GetCell(Vector3Int index)
     {
         return map[index.x, index.y, index.z];
     }
 
+
+    //Finds the cell with the lowest number of possible modules and returns its coordinates
     Vector3Int FindLowestEntropyIndex()
     {
         int lowest = int.MaxValue;
@@ -293,6 +317,7 @@ public class Generator : MonoBehaviour
         return list[Random.Range(0, list.Count)];
     }
 
+    //Checks if all the cells are collapsed 
     bool isCollapsedComplate()
     {
         foreach (Cell c in map) 
@@ -305,6 +330,7 @@ public class Generator : MonoBehaviour
         return true;
     }
 
+    //Initilizes the map and puts a cell object and initilizes all their possibilities to all the possible modules 
     void InitilizeMap()
     {
         moduleList = SaveData.LoadFromJson();
@@ -331,31 +357,31 @@ public class Generator : MonoBehaviour
         
     }
 
+    //Render the queued objects in a interval
     IEnumerator RenderInTime()
     {
         while (cellsOrder.Count > 0) 
         {
-            
-            
             RenderCell(cellsOrder.Dequeue());
 
             yield return new WaitForSeconds(renderInterval);
         }
     }
 
+    //Render the given cell
     private void RenderCell(Cell c)
     {
-        GameObject obj = Instantiate((GameObject)Resources.Load("Cell", typeof(GameObject)));
-
-        Mesh m = null;
-
-        foreach(Mesh mesh in meshes)
+        if (!meshes.ContainsKey(moduleList.modules[c.ID].referanceMesh))
         {
-            if(mesh.name == moduleList.modules[c.ID].referanceMesh) 
-            {
-                m = mesh;
-            }
+            Mesh[] meshFolderContent = Resources.LoadAll<Mesh>(meshPathName + moduleList.modules[c.ID].referanceMesh);
+            meshes.Add(moduleList.modules[c.ID].referanceMesh, meshFolderContent);
         }
+
+        int rand = Random.Range(0, meshes[moduleList.modules[c.ID].referanceMesh].Length);
+
+        Mesh m = meshes[moduleList.modules[c.ID].referanceMesh][rand];
+
+        GameObject obj = Instantiate((GameObject)Resources.Load("Cell", typeof(GameObject)));
 
         obj.GetComponent<MeshFilter>().mesh = m;
 

@@ -3,6 +3,7 @@ using UnityEngine;
 using TMPro;
 using UnityEditor;
 using System;
+using System.IO;
 
 public class FindSockets : MonoBehaviour
 {
@@ -15,13 +16,14 @@ public class FindSockets : MonoBehaviour
     int prototypeCount = 0;
     List<Prototype> prototypes = new List<Prototype>();
     PrototypePreferences[] preferances;
+    string folderName = "Objects";
 
     private void Start()
     {
+#if UNITY_EDITOR
+        string folderPath = "Assets/Resources/" + folderName;
 
         preferances = (PrototypePreferences[])FindObjectsOfType(typeof(PrototypePreferences));
-
-        Debug.Log(preferances.Length);
 
         ModuleList moduleList = new ModuleList();
 
@@ -30,6 +32,14 @@ public class FindSockets : MonoBehaviour
         socketList = new Dictionary<string, List<Vector2>>();
         socketListVertical = new Dictionary<string, List<Vector2>>();
 
+        if (Directory.Exists(folderPath))
+        {
+            Directory.Delete(folderPath, true);
+        }
+
+        AssetDatabase.CreateFolder("Assets/Resources", folderName);
+        UnityEditor.AssetDatabase.Refresh();
+
         foreach (Mesh m in meshes) 
         {
 
@@ -37,6 +47,20 @@ public class FindSockets : MonoBehaviour
 
             CreatePrototypes(sockets, m.name);
 
+            string meshFolderName = m.name;
+
+            if (!Directory.Exists(meshFolderName))
+            {
+                AssetDatabase.CreateFolder(folderPath, meshFolderName);
+            }
+
+            Mesh newMesh = Instantiate(m);
+
+            string meshFileName = folderPath + "/" + meshFolderName + "/" + m.name + ".mesh";
+
+            UnityEditor.AssetDatabase.CreateAsset(newMesh, meshFileName);
+            UnityEditor.AssetDatabase.SaveAssets();
+            UnityEditor.AssetDatabase.Refresh();
         }
 
         //for (int i = 0; i < meshesParent.childCount; i++)
@@ -102,7 +126,7 @@ public class FindSockets : MonoBehaviour
         //savePrototypesToJson
         moduleList.fbxName = fbxName;
         SaveData.SaveToJson(moduleList);
-
+#endif
     }
 
     //void RenderPrototypes(Prototype p, int x, int z)
